@@ -1,5 +1,10 @@
 import Config
 
+# Start server when PHX_SERVER is set (used by Fly.io)
+if System.get_env("PHX_SERVER") do
+  config :travel_agent, TravelAgentWeb.Endpoint, server: true
+end
+
 if config_env() == :prod do
   secret_key_base =
     System.get_env("SECRET_KEY_BASE") ||
