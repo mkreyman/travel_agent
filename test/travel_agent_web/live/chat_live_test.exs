@@ -8,16 +8,17 @@ defmodule TravelAgentWeb.ChatLiveTest do
       {:ok, _view, html} = live(conn, "/")
 
       assert html =~ "Travel Agent"
-      assert html =~ "Your friendly travel planning assistant"
+      assert html =~ "Your AI-powered travel planning assistant"
     end
 
-    test "displays empty message list initially", %{conn: conn} do
+    test "displays empty state with suggestions initially", %{conn: conn} do
       {:ok, _view, html} = live(conn, "/")
 
-      # Should have the messages container but no user messages
+      # Should have the messages container
       assert html =~ ~s(id="messages")
-      # Messages div should be empty (no message bubbles)
-      refute html =~ ~s(class="p-3 rounded-lg)
+      # Should show empty state with suggestions
+      assert html =~ "Where would you like to go?"
+      assert html =~ "Plan a beach vacation"
     end
   end
 end
