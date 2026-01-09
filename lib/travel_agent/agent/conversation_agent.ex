@@ -165,10 +165,12 @@ defmodule TravelAgent.Agent.ConversationAgent do
   defp run_tool_loop(client, messages, tools, tool_map, iteration) do
     case client.chat_with_tools(messages, tools, []) do
       {:ok, %{"content" => content, "tool_calls" => nil}} ->
-        {:ok, content, messages ++ [%{role: "assistant", content: content}]}
+        clean_content = strip_surrounding_quotes(content)
+        {:ok, clean_content, messages ++ [%{role: "assistant", content: clean_content}]}
 
       {:ok, %{"content" => content}} when is_binary(content) and content != "" ->
-        {:ok, content, messages ++ [%{role: "assistant", content: content}]}
+        clean_content = strip_surrounding_quotes(content)
+        {:ok, clean_content, messages ++ [%{role: "assistant", content: clean_content}]}
 
       {:ok, %{"tool_calls" => tool_calls} = response} when is_list(tool_calls) ->
         # Add assistant message with tool calls to history
@@ -283,4 +285,21 @@ defmodule TravelAgent.Agent.ConversationAgent do
   defp llm_client do
     Application.get_env(:travel_agent, :llm_client, TravelAgent.LLM.OpenAIClient)
   end
+
+  defp strip_surrounding_quotes(nil), do: nil
+
+  defp strip_surrounding_quotes(content) when is_binary(content) do
+    content
+    |> String.trim()
+    |> strip_quotes()
+  end
+
+  defp strip_quotes(<<"\"", rest::binary>>) do
+    case String.trim_trailing(rest, "\"") do
+      ^rest -> "\"" <> rest
+      trimmed -> trimmed
+    end
+  end
+
+  defp strip_quotes(content), do: content
 end
