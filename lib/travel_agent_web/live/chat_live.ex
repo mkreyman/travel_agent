@@ -88,8 +88,8 @@ defmodule TravelAgentWeb.ChatLive do
             "p-3 rounded-lg max-w-[80%]",
             message_classes(message.role)
           ]}>
-            <p class="text-sm font-medium mb-1"><%= role_label(message.role) %></p>
-            <p class="whitespace-pre-wrap"><%= message.content %></p>
+            <p class="text-sm font-medium mb-1">{role_label(message.role)}</p>
+            <p class="whitespace-pre-wrap">{message.content}</p>
           </div>
         <% end %>
 

@@ -21,7 +21,7 @@ cd "$(git rev-parse --show-toplevel)"
 
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
 
-if ! mix precommit; then
+if ! MIX_ENV=test mix precommit; then
     echo "Pre-commit checks FAILED!"
     exit 1
 fi
