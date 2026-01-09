@@ -8,11 +8,18 @@ defmodule TravelAgentWeb.ChatLive do
   use TravelAgentWeb, :live_view
 
   alias TravelAgent.Agent.ConversationAgent
+  alias TravelAgent.Tools.DestinationTool
 
   @impl true
   def mount(_params, _session, socket) do
-    # Start a new conversation agent for this session
-    {:ok, agent} = ConversationAgent.start_link()
+    # Start a new conversation agent for this session with travel configuration
+    system_prompt = Application.get_env(:travel_agent, :travel_system_prompt)
+
+    {:ok, agent} =
+      ConversationAgent.start_link(
+        system_prompt: system_prompt,
+        tools: [DestinationTool]
+      )
 
     socket =
       socket
@@ -51,7 +58,7 @@ defmodule TravelAgentWeb.ChatLive do
 
   @impl true
   def handle_info({:chat, message}, socket) do
-    case ConversationAgent.chat(socket.assigns.agent, message) do
+    case ConversationAgent.chat_with_tools(socket.assigns.agent, message) do
       {:ok, response} ->
         assistant_message = %{role: "assistant", content: response}
 
@@ -79,7 +86,8 @@ defmodule TravelAgentWeb.ChatLive do
     ~H"""
     <div class="flex flex-col h-screen max-w-4xl mx-auto p-4">
       <header class="mb-4">
-        <h1 class="text-2xl font-bold text-gray-800">AI Assistant</h1>
+        <h1 class="text-2xl font-bold text-gray-800">Travel Agent</h1>
+        <p class="text-sm text-gray-600">Your friendly travel planning assistant</p>
       </header>
 
       <div class="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-gray-50 rounded-lg" id="messages">
@@ -128,6 +136,6 @@ defmodule TravelAgentWeb.ChatLive do
   defp message_classes("system"), do: "bg-yellow-100 mx-auto text-center"
 
   defp role_label("user"), do: "You"
-  defp role_label("assistant"), do: "Assistant"
+  defp role_label("assistant"), do: "Travel Agent"
   defp role_label("system"), do: "System"
 end

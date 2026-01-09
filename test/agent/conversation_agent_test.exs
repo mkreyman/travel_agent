@@ -102,4 +102,83 @@ defmodule TravelAgent.Agent.ConversationAgentTest do
       assert hd(history).role == "system"
     end
   end
+
+  describe "tool execution" do
+    alias TravelAgent.Tools.DestinationTool
+
+    test "chat_with_tools/2 handles tool calls" do
+      # First call returns a tool call request
+      expect(MockClient, :chat_with_tools, fn _messages, _tools, _opts ->
+        {:ok,
+         %{
+           "content" => nil,
+           "tool_calls" => [
+             %{
+               "id" => "call_123",
+               "type" => "function",
+               "function" => %{
+                 "name" => "search_destinations",
+                 "arguments" => ~s({"preferences": "beach relaxation"})
+               }
+             }
+           ]
+         }}
+      end)
+
+      # Second call returns the final response after tool result
+      expect(MockClient, :chat_with_tools, fn messages, _tools, _opts ->
+        # Should include tool result
+        assert Enum.any?(messages, fn m -> m[:role] == "tool" end)
+        {:ok, %{"content" => "Based on your preferences, I recommend Bali!"}}
+      end)
+
+      {:ok, agent} = start_agent(tools: [DestinationTool])
+
+      assert {:ok, response} =
+               ConversationAgent.chat_with_tools(agent, "Find me a beach destination")
+
+      assert String.contains?(response, "Bali")
+    end
+
+    test "chat_with_tools/2 returns regular response when no tool call" do
+      expect(MockClient, :chat_with_tools, fn _messages, _tools, _opts ->
+        {:ok, %{"content" => "Hello! How can I help you plan your trip?"}}
+      end)
+
+      {:ok, agent} = start_agent(tools: [DestinationTool])
+
+      assert {:ok, "Hello! How can I help you plan your trip?"} =
+               ConversationAgent.chat_with_tools(agent, "Hi")
+    end
+
+    test "handles unknown tool gracefully" do
+      expect(MockClient, :chat_with_tools, fn _messages, _tools, _opts ->
+        {:ok,
+         %{
+           "content" => nil,
+           "tool_calls" => [
+             %{
+               "id" => "call_456",
+               "type" => "function",
+               "function" => %{
+                 "name" => "unknown_tool",
+                 "arguments" => "{}"
+               }
+             }
+           ]
+         }}
+      end)
+
+      # Should call again with error message
+      expect(MockClient, :chat_with_tools, fn messages, _tools, _opts ->
+        tool_result = Enum.find(messages, &(&1[:role] == "tool"))
+        assert tool_result
+        assert String.contains?(tool_result.content, "error")
+        {:ok, %{"content" => "Sorry, I couldn't complete that action."}}
+      end)
+
+      {:ok, agent} = start_agent(tools: [DestinationTool])
+      assert {:ok, _response} = ConversationAgent.chat_with_tools(agent, "Do something")
+    end
+  end
 end
