@@ -130,19 +130,17 @@ defmodule TravelAgent.Tools.DestinationTool do
       |> Enum.filter(fn {_dest, score} -> score > 0 end)
       |> Enum.sort_by(fn {_dest, score} -> score end, :desc)
       |> Enum.take(5)
-      |> Enum.map(fn {dest, _score} -> format_destination(dest) end)
+      |> Enum.map(fn {dest, _score} -> dest end)
 
     # If no matches, return top general recommendations
     results =
-      if Enum.empty?(matching_destinations) do
-        @destinations
-        |> Enum.take(3)
-        |> Enum.map(&format_destination/1)
+      if matching_destinations == [] do
+        Enum.take(@destinations, 3)
       else
         matching_destinations
       end
 
-    {:ok, Jason.encode!(%{"destinations" => results})}
+    {:ok, format_results_text(results)}
   end
 
   def execute(_args) do
@@ -171,14 +169,28 @@ defmodule TravelAgent.Tools.DestinationTool do
     end)
   end
 
-  defp format_destination(dest) do
-    %{
-      "name" => dest.name,
-      "country" => dest.country,
-      "description" => dest.description,
-      "best_for" => Enum.join(dest.best_for, ", "),
-      "best_season" => dest.best_season,
-      "highlights" => dest.highlights
-    }
+  defp format_results_text(destinations) do
+    destination_texts =
+      destinations
+      |> Enum.with_index(1)
+      |> Enum.map(fn {dest, index} ->
+        highlights = Enum.join(dest.highlights, ", ")
+
+        """
+        #{index}. #{dest.name}, #{dest.country}
+           #{dest.description}
+           Best for: #{Enum.join(dest.best_for, ", ")}
+           Best time to visit: #{dest.best_season}
+           Highlights: #{highlights}
+        """
+      end)
+      |> Enum.join("\n")
+
+    """
+    Found #{length(destinations)} matching destinations:
+
+    #{destination_texts}
+    Use this information to provide personalized recommendations to the user.
+    """
   end
 end

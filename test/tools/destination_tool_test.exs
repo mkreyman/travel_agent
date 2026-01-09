@@ -29,50 +29,48 @@ defmodule TravelAgent.Tools.DestinationToolTest do
 
       assert {:ok, result} = DestinationTool.execute(args)
       assert is_binary(result)
-      # Should return JSON with destinations
-      assert {:ok, data} = Jason.decode(result)
-      assert is_list(data["destinations"])
-      assert data["destinations"] != []
+      assert String.contains?(result, "Found")
+      assert String.contains?(result, "matching destinations")
+      # Should include beach destinations
+      assert String.contains?(result, "Bali") or String.contains?(result, "Maldives")
     end
 
     test "returns destinations for adventure preferences" do
       args = %{"preferences" => "adventure hiking mountains"}
 
       assert {:ok, result} = DestinationTool.execute(args)
-      assert {:ok, data} = Jason.decode(result)
-      assert is_list(data["destinations"])
+      assert String.contains?(result, "Found")
+      # Should include adventure destinations
+      assert String.contains?(result, "Swiss Alps") or String.contains?(result, "Machu Picchu")
     end
 
     test "returns destinations for city preferences" do
       args = %{"preferences" => "city culture museums history"}
 
       assert {:ok, result} = DestinationTool.execute(args)
-      assert {:ok, data} = Jason.decode(result)
-      assert is_list(data["destinations"])
+      assert String.contains?(result, "Found")
+      # Should include city destinations
+      assert String.contains?(result, "Paris") or String.contains?(result, "Rome")
     end
 
     test "handles empty preferences gracefully" do
       args = %{"preferences" => ""}
 
       assert {:ok, result} = DestinationTool.execute(args)
-      assert {:ok, data} = Jason.decode(result)
       # Should return general recommendations
-      assert is_list(data["destinations"])
+      assert String.contains?(result, "Found")
+      assert String.contains?(result, "matching destinations")
     end
 
-    test "each destination has required fields" do
-      args = %{"preferences" => "any"}
+    test "each destination has required fields in output" do
+      args = %{"preferences" => "beach"}
 
       assert {:ok, result} = DestinationTool.execute(args)
-      assert {:ok, data} = Jason.decode(result)
 
-      Enum.each(data["destinations"], fn dest ->
-        assert Map.has_key?(dest, "name")
-        assert Map.has_key?(dest, "country")
-        assert Map.has_key?(dest, "description")
-        assert Map.has_key?(dest, "best_for")
-        assert Map.has_key?(dest, "best_season")
-      end)
+      # Check that output contains expected fields
+      assert String.contains?(result, "Best for:")
+      assert String.contains?(result, "Best time to visit:")
+      assert String.contains?(result, "Highlights:")
     end
   end
 
