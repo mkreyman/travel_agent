@@ -112,8 +112,10 @@ defmodule TravelAgentWeb.ChatLive do
         <input
           type="text"
           name="message"
+          id="message-input"
           value={@input_value}
           phx-change="update_input"
+          phx-hook="FocusInput"
           placeholder="Type your message..."
           class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           autocomplete="off"
