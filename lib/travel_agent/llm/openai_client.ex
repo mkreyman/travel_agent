@@ -10,6 +10,8 @@ defmodule TravelAgent.LLM.OpenAIClient do
   @default_model "gpt-4o"
   @default_temperature 0.7
   @default_max_tokens 1024
+  @default_retries 3
+  @retry_delay 1000
 
   @impl true
   def chat(messages, options \\ []) do
@@ -24,7 +26,7 @@ defmodule TravelAgent.LLM.OpenAIClient do
       max_tokens: max_tokens
     }
 
-    case Req.post(api_url(), json: body, headers: headers()) do
+    case Req.post(api_url(), json: body, headers: headers(), retry: retry_options()) do
       {:ok, %{status: 200, body: %{"choices" => [%{"message" => %{"content" => content}} | _]}}} ->
         {:ok, content}
 
@@ -50,7 +52,7 @@ defmodule TravelAgent.LLM.OpenAIClient do
       max_tokens: max_tokens
     }
 
-    case Req.post(api_url(), json: body, headers: headers()) do
+    case Req.post(api_url(), json: body, headers: headers(), retry: retry_options()) do
       {:ok, %{status: 200, body: %{"choices" => [%{"message" => message} | _]}}} ->
         {:ok, message}
 
@@ -73,5 +75,17 @@ defmodule TravelAgent.LLM.OpenAIClient do
 
   defp api_key do
     Application.fetch_env!(:travel_agent, :openai_api_key)
+  end
+
+  defp retry_options do
+    [
+      max_retries: @default_retries,
+      delay: @retry_delay,
+      retry: fn
+        {:ok, %{status: status}} when status in [429, 500, 502, 503, 504] -> true
+        {:error, %Req.TransportError{}} -> true
+        _ -> false
+      end
+    ]
   end
 end
