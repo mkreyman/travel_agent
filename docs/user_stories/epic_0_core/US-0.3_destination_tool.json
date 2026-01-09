@@ -1,0 +1,267 @@
+{
+  "id": "US-0.3",
+  "title": "Destination Recommendation Tool",
+  "epic": {
+    "id": "epic_0",
+    "name": "Core"
+  },
+  "priority": "critical",
+  "phase": "mvp",
+  "story": {
+    "as_a": "traveler",
+    "i_want_to": "receive destination recommendations based on my preferences",
+    "so_that": "I can discover places that match my travel interests like beach vacations, cultural experiences, or adventure trips"
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-0.3.1",
+      "description": "Tool behaviour is defined with execute/1 callback and schema/0 for tool definitions",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.3.2",
+      "description": "Destination tool implements the tool behaviour with search_destinations function",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.3.3",
+      "description": "Tool accepts parameters: travel_type, budget_level, region_preference",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.3.4",
+      "description": "Tool returns structured destination data with name, country, description, highlights, and best_time_to_visit",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.3.5",
+      "description": "Mock data includes at least 10 diverse destinations covering different travel types",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.3.6",
+      "description": "Tool schema is properly formatted for OpenAI function calling",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.3.7",
+      "description": "Tool results are JSON-serializable for inclusion in LLM conversation",
+      "status": "pending"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "TC-0.3.1",
+      "name": "Search destinations by travel type - beach",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool module is defined",
+        "Mock destination data is loaded"
+      ],
+      "steps": [
+        "Call execute/1 with %{travel_type: 'beach'}",
+        "Parse response"
+      ],
+      "expected_results": [
+        "Returns {:ok, destinations} tuple",
+        "Destinations list is not empty",
+        "Each destination has beach-related characteristics",
+        "Results include expected fields: name, country, description"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.2",
+      "name": "Search destinations by travel type - cultural",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool module is defined"
+      ],
+      "steps": [
+        "Call execute/1 with %{travel_type: 'cultural'}",
+        "Parse response"
+      ],
+      "expected_results": [
+        "Returns destinations with cultural attractions",
+        "Results include historical sites, museums, or heritage locations",
+        "At least 2 destinations returned"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.3",
+      "name": "Search destinations by travel type - adventure",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool module is defined"
+      ],
+      "steps": [
+        "Call execute/1 with %{travel_type: 'adventure'}",
+        "Parse response"
+      ],
+      "expected_results": [
+        "Returns destinations suitable for adventure travel",
+        "Results include outdoor activities in highlights",
+        "At least 2 destinations returned"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.4",
+      "name": "Filter destinations by budget level",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool module is defined"
+      ],
+      "steps": [
+        "Call execute/1 with %{budget_level: 'budget'}",
+        "Call execute/1 with %{budget_level: 'luxury'}",
+        "Compare results"
+      ],
+      "expected_results": [
+        "Budget filter returns affordable destinations",
+        "Luxury filter returns premium destinations",
+        "Results differ between budget levels"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.5",
+      "name": "Filter destinations by region",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool module is defined"
+      ],
+      "steps": [
+        "Call execute/1 with %{region_preference: 'europe'}",
+        "Call execute/1 with %{region_preference: 'asia'}",
+        "Verify results"
+      ],
+      "expected_results": [
+        "Europe filter returns European destinations only",
+        "Asia filter returns Asian destinations only",
+        "Countries match expected regions"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.6",
+      "name": "Combined filter search",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool module is defined"
+      ],
+      "steps": [
+        "Call execute/1 with %{travel_type: 'beach', budget_level: 'moderate', region_preference: 'asia'}",
+        "Parse response"
+      ],
+      "expected_results": [
+        "Returns destinations matching all criteria",
+        "Results are beach destinations in Asia at moderate price",
+        "Empty list returned if no matches (not an error)"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.7",
+      "name": "Tool schema format validation",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool module is defined"
+      ],
+      "steps": [
+        "Call schema/0 on destination tool",
+        "Validate structure against OpenAI function schema"
+      ],
+      "expected_results": [
+        "Schema has 'name' field with value 'search_destinations'",
+        "Schema has 'description' field explaining the tool",
+        "Schema has 'parameters' object with JSON Schema format",
+        "Parameters include travel_type, budget_level, region_preference",
+        "Each parameter has type and description"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.8",
+      "name": "Destination data structure completeness",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool returns results"
+      ],
+      "steps": [
+        "Execute any valid search",
+        "Inspect first destination in results"
+      ],
+      "expected_results": [
+        "Destination has :name string field",
+        "Destination has :country string field",
+        "Destination has :description string field",
+        "Destination has :highlights list of strings",
+        "Destination has :best_time_to_visit string field",
+        "Destination has :budget_level field"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.9",
+      "name": "JSON serialization of results",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool returns results"
+      ],
+      "steps": [
+        "Execute search and get results",
+        "Encode results with Jason.encode!/1"
+      ],
+      "expected_results": [
+        "Results serialize without error",
+        "JSON is valid and parseable",
+        "All nested structures serialize correctly"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.3.10",
+      "name": "Handle empty or invalid parameters gracefully",
+      "type": "unit",
+      "preconditions": [
+        "Destination tool module is defined"
+      ],
+      "steps": [
+        "Call execute/1 with empty map %{}",
+        "Call execute/1 with invalid travel_type"
+      ],
+      "expected_results": [
+        "Empty params returns all destinations or sensible default",
+        "Invalid travel_type returns empty list, not error",
+        "No crashes or exceptions raised"
+      ],
+      "status": "pending"
+    }
+  ],
+  "technical_notes": [
+    "Define TravelAgent.Tool behaviour with @callback execute(params) and @callback schema()",
+    "Implement TravelAgent.Tools.DestinationSearch module",
+    "Mock data should be stored in module attribute or separate data file",
+    "Include diverse destinations: Paris, Tokyo, Bali, Machu Picchu, Maldives, Iceland, etc.",
+    "Travel types: beach, cultural, adventure, romantic, family, culinary",
+    "Budget levels: budget, moderate, luxury",
+    "Regions: europe, asia, north_america, south_america, oceania, africa",
+    "Schema format must match OpenAI function calling specification exactly"
+  ],
+  "files_to_create": [
+    "lib/travel_agent/tool.ex",
+    "lib/travel_agent/tools/destination_search.ex",
+    "lib/travel_agent/tools/destination_data.ex",
+    "test/travel_agent/tools/destination_search_test.exs"
+  ],
+  "dependencies": [
+    "US-0.2"
+  ],
+  "estimated_minutes": 25,
+  "blocking": false,
+  "blocks": [
+    "US-0.4"
+  ]
+}

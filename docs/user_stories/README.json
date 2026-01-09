@@ -1,0 +1,58 @@
+{
+  "project": {
+    "name": "Travel Agent",
+    "description": "Conversational trip planning assistant with destination recommendations",
+    "version": "0.1.0",
+    "mode": "sprint",
+    "timeline": "2 hours"
+  },
+  "target_users": [
+    {
+      "persona": "Traveler",
+      "description": "Users seeking trip planning assistance and destination recommendations",
+      "goals": [
+        "Get personalized destination recommendations",
+        "Plan trips through natural conversation",
+        "Discover activities and attractions"
+      ]
+    }
+  ],
+  "agent_identity": {
+    "purpose": "Conversational trip planning with destination recommendations",
+    "personality": "Friendly travel expert - warm, enthusiastic, helpful guide",
+    "interaction_mode": "Text only",
+    "conversation_type": "Multi-turn with natural flow"
+  },
+  "technical_stack": {
+    "framework": "Phoenix LiveView",
+    "llm_provider": "OpenAI GPT-4o",
+    "persistence": "In-memory (Sprint mode)",
+    "voice": "None",
+    "auth": "Skip"
+  },
+  "epics": [
+    {
+      "id": "epic_0",
+      "name": "Core",
+      "description": "MVP sprint implementation - basic conversational travel agent",
+      "directory": "epic_0_core",
+      "stories": [
+        "US-0.1",
+        "US-0.2",
+        "US-0.3",
+        "US-0.4"
+      ],
+      "priority": "critical",
+      "phase": "mvp"
+    }
+  ],
+  "story_summary": {
+    "total_stories": 4,
+    "by_priority": {
+      "critical": 4
+    },
+    "estimated_total_minutes": 100
+  },
+  "created_at": "2026-01-09",
+  "last_updated": "2026-01-09"
+}

@@ -1,0 +1,197 @@
+{
+  "id": "US-0.1",
+  "title": "Conversation GenServer",
+  "epic": {
+    "id": "epic_0",
+    "name": "Core"
+  },
+  "priority": "critical",
+  "phase": "mvp",
+  "story": {
+    "as_a": "traveler",
+    "i_want_to": "have my conversation history maintained throughout my session",
+    "so_that": "the travel agent can understand context from previous messages and provide coherent, personalized recommendations"
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-0.1.1",
+      "description": "GenServer starts successfully and maintains isolated state per conversation session",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.1.2",
+      "description": "Messages are stored in-memory with role (user/assistant/system), content, and timestamp",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.1.3",
+      "description": "Conversation history is retrievable in chronological order for LLM context building",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.1.4",
+      "description": "GenServer handles adding new messages atomically without race conditions",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.1.5",
+      "description": "Conversation can be cleared/reset without restarting the GenServer",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.1.6",
+      "description": "System prompt is configurable and included as the first message in history",
+      "status": "pending"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "TC-0.1.1",
+      "name": "GenServer initialization with system prompt",
+      "type": "unit",
+      "preconditions": [
+        "TravelAgent.Conversation module is defined"
+      ],
+      "steps": [
+        "Start GenServer with start_link/1",
+        "Pass system_prompt option with travel agent personality",
+        "Retrieve conversation history"
+      ],
+      "expected_results": [
+        "GenServer starts with {:ok, pid}",
+        "History contains exactly one message",
+        "First message has role: :system with provided prompt content"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.1.2",
+      "name": "Add user message to conversation",
+      "type": "unit",
+      "preconditions": [
+        "GenServer is running with initialized state"
+      ],
+      "steps": [
+        "Call add_message/3 with conversation_pid, :user role, and content",
+        "Retrieve conversation history"
+      ],
+      "expected_results": [
+        "Function returns :ok",
+        "History contains system prompt + user message",
+        "User message has correct role, content, and timestamp"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.1.3",
+      "name": "Add assistant message to conversation",
+      "type": "unit",
+      "preconditions": [
+        "GenServer is running",
+        "At least one user message exists"
+      ],
+      "steps": [
+        "Call add_message/3 with :assistant role and response content",
+        "Retrieve conversation history"
+      ],
+      "expected_results": [
+        "Function returns :ok",
+        "History contains messages in correct order: system, user, assistant",
+        "Assistant message includes timestamp"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.1.4",
+      "name": "Retrieve full conversation history",
+      "type": "unit",
+      "preconditions": [
+        "GenServer has multiple messages in history"
+      ],
+      "steps": [
+        "Add 5 alternating user/assistant messages",
+        "Call get_history/1"
+      ],
+      "expected_results": [
+        "Returns list of 6 messages (system + 5 conversation)",
+        "Messages are in chronological order",
+        "Each message has :role, :content, :timestamp keys"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.1.5",
+      "name": "Clear conversation history",
+      "type": "unit",
+      "preconditions": [
+        "GenServer has existing conversation history"
+      ],
+      "steps": [
+        "Add several messages to conversation",
+        "Call clear/1 on the conversation",
+        "Retrieve history"
+      ],
+      "expected_results": [
+        "clear/1 returns :ok",
+        "History contains only the system prompt",
+        "Subsequent messages can be added normally"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.1.6",
+      "name": "Concurrent message handling",
+      "type": "unit",
+      "preconditions": [
+        "GenServer is running"
+      ],
+      "steps": [
+        "Spawn 10 concurrent tasks each adding a message",
+        "Wait for all tasks to complete",
+        "Retrieve history"
+      ],
+      "expected_results": [
+        "All messages are present in history",
+        "No messages are lost or corrupted",
+        "Message order reflects GenServer serialization"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.1.7",
+      "name": "Format history for LLM API",
+      "type": "unit",
+      "preconditions": [
+        "GenServer has conversation history"
+      ],
+      "steps": [
+        "Add user and assistant messages",
+        "Call get_messages_for_llm/1"
+      ],
+      "expected_results": [
+        "Returns list formatted for OpenAI API",
+        "Each message has 'role' and 'content' string keys",
+        "Timestamps are excluded from LLM format"
+      ],
+      "status": "pending"
+    }
+  ],
+  "technical_notes": [
+    "Use GenServer with state as %{messages: [], system_prompt: string}",
+    "Messages stored as %{role: :user | :assistant | :system, content: string, timestamp: DateTime.t()}",
+    "Consider using Registry for named process lookup if needed later",
+    "Keep message format compatible with OpenAI chat completion API structure",
+    "System prompt should establish the friendly travel expert personality"
+  ],
+  "files_to_create": [
+    "lib/travel_agent/conversation.ex",
+    "test/travel_agent/conversation_test.exs"
+  ],
+  "dependencies": [],
+  "estimated_minutes": 25,
+  "blocking": false,
+  "blocks": [
+    "US-0.2",
+    "US-0.4"
+  ]
+}

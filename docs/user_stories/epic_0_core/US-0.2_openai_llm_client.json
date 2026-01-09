@@ -1,0 +1,232 @@
+{
+  "id": "US-0.2",
+  "title": "OpenAI LLM Client",
+  "epic": {
+    "id": "epic_0",
+    "name": "Core"
+  },
+  "priority": "critical",
+  "phase": "mvp",
+  "story": {
+    "as_a": "traveler",
+    "i_want_to": "receive intelligent, contextual responses to my travel questions",
+    "so_that": "I get helpful recommendations powered by GPT-4o that understand my preferences and conversation history"
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-0.2.1",
+      "description": "LLM behaviour is defined with chat_completion/2 callback for provider abstraction",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.2.2",
+      "description": "OpenAI client implements the LLM behaviour using GPT-4o model",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.2.3",
+      "description": "Client accepts conversation history and returns assistant response",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.2.4",
+      "description": "Tool definitions can be passed to enable function calling capabilities",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.2.5",
+      "description": "Response includes tool_calls when LLM determines tool use is needed",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.2.6",
+      "description": "API errors are handled gracefully with meaningful error tuples",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.2.7",
+      "description": "API key is read from application config or environment variable",
+      "status": "pending"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "TC-0.2.1",
+      "name": "Basic chat completion without tools",
+      "type": "integration",
+      "preconditions": [
+        "Valid OpenAI API key configured",
+        "Network access available"
+      ],
+      "steps": [
+        "Create messages list with system prompt and user message",
+        "Call chat_completion/2 with messages and empty tools list",
+        "Parse response"
+      ],
+      "expected_results": [
+        "Returns {:ok, response} tuple",
+        "Response contains :content with assistant message",
+        "Response contains :role as :assistant",
+        "No tool_calls in response"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.2.2",
+      "name": "Chat completion with tool definitions",
+      "type": "integration",
+      "preconditions": [
+        "Valid OpenAI API key configured",
+        "Tool definitions properly formatted"
+      ],
+      "steps": [
+        "Define destination_search tool with parameters",
+        "Send user message asking for destination recommendations",
+        "Call chat_completion/2 with tools option"
+      ],
+      "expected_results": [
+        "Returns {:ok, response} tuple",
+        "Response may contain :tool_calls list",
+        "Each tool call has :id, :name, and :arguments keys",
+        "Arguments are parseable JSON"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.2.3",
+      "name": "Handle tool call response in conversation",
+      "type": "integration",
+      "preconditions": [
+        "Previous tool call was made",
+        "Tool result is available"
+      ],
+      "steps": [
+        "Add tool call response message to history with tool_call_id",
+        "Call chat_completion/2 with updated history",
+        "Parse final response"
+      ],
+      "expected_results": [
+        "LLM incorporates tool results in response",
+        "Response is natural language synthesizing tool data",
+        "No further tool calls needed"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.2.4",
+      "name": "Handle API rate limit error",
+      "type": "unit",
+      "preconditions": [
+        "Mock HTTP client configured",
+        "Rate limit response simulated"
+      ],
+      "steps": [
+        "Configure mock to return 429 status",
+        "Call chat_completion/2"
+      ],
+      "expected_results": [
+        "Returns {:error, :rate_limited} tuple",
+        "Error includes retry-after information if available",
+        "No crash or unhandled exception"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.2.5",
+      "name": "Handle invalid API key error",
+      "type": "unit",
+      "preconditions": [
+        "Mock HTTP client configured",
+        "401 response simulated"
+      ],
+      "steps": [
+        "Configure mock to return 401 unauthorized",
+        "Call chat_completion/2"
+      ],
+      "expected_results": [
+        "Returns {:error, :unauthorized} tuple",
+        "Error message indicates authentication failure"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.2.6",
+      "name": "Handle network timeout",
+      "type": "unit",
+      "preconditions": [
+        "Mock HTTP client configured",
+        "Timeout condition simulated"
+      ],
+      "steps": [
+        "Configure mock to simulate timeout",
+        "Call chat_completion/2"
+      ],
+      "expected_results": [
+        "Returns {:error, :timeout} tuple",
+        "Function does not hang indefinitely"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.2.7",
+      "name": "Behaviour contract compliance",
+      "type": "unit",
+      "preconditions": [
+        "LLM behaviour module defined"
+      ],
+      "steps": [
+        "Verify OpenAI client implements LLM behaviour",
+        "Check all required callbacks are implemented"
+      ],
+      "expected_results": [
+        "Module compiles without behaviour warnings",
+        "chat_completion/2 callback is implemented",
+        "get_tools_schema/0 callback is implemented"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.2.8",
+      "name": "Message format conversion",
+      "type": "unit",
+      "preconditions": [
+        "Messages in internal format available"
+      ],
+      "steps": [
+        "Create messages with atom keys and internal structure",
+        "Pass to chat_completion/2"
+      ],
+      "expected_results": [
+        "Messages are converted to OpenAI API format",
+        "Role is string ('user', 'assistant', 'system')",
+        "Content is properly formatted"
+      ],
+      "status": "pending"
+    }
+  ],
+  "technical_notes": [
+    "Define TravelAgent.LLM behaviour with @callback chat_completion(messages, opts)",
+    "Implement TravelAgent.LLM.OpenAI module for GPT-4o",
+    "Use Req or HTTPoison for HTTP client",
+    "Store API key in config :travel_agent, :openai_api_key or OPENAI_API_KEY env var",
+    "Tool schema follows OpenAI function calling format",
+    "Consider adding Mox for HTTP mocking in tests",
+    "Response struct should normalize OpenAI response format"
+  ],
+  "files_to_create": [
+    "lib/travel_agent/llm.ex",
+    "lib/travel_agent/llm/openai.ex",
+    "lib/travel_agent/llm/response.ex",
+    "test/travel_agent/llm/openai_test.exs",
+    "test/support/llm_mock.ex"
+  ],
+  "dependencies": [
+    "US-0.1"
+  ],
+  "estimated_minutes": 30,
+  "blocking": false,
+  "blocks": [
+    "US-0.3",
+    "US-0.4"
+  ]
+}

@@ -1,0 +1,326 @@
+{
+  "id": "US-0.4",
+  "title": "LiveView Chat Interface",
+  "epic": {
+    "id": "epic_0",
+    "name": "Core"
+  },
+  "priority": "critical",
+  "phase": "mvp",
+  "story": {
+    "as_a": "traveler",
+    "i_want_to": "interact with the travel agent through a web-based chat interface",
+    "so_that": "I can easily ask questions, view responses, and have a natural conversation about my trip planning needs"
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-0.4.1",
+      "description": "LiveView chat page loads at /chat route with travel agent branding",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.4.2",
+      "description": "Message input field accepts text and submits on Enter key or button click",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.4.3",
+      "description": "User messages appear in chat history immediately after sending",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.4.4",
+      "description": "Assistant responses appear in chat history after LLM processing",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.4.5",
+      "description": "Messages are visually distinguished between user (right-aligned) and assistant (left-aligned)",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.4.6",
+      "description": "Loading indicator displays while waiting for assistant response",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.4.7",
+      "description": "Chat scrolls to show latest messages automatically",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.4.8",
+      "description": "Error messages display gracefully when LLM call fails",
+      "status": "pending"
+    },
+    {
+      "id": "AC-0.4.9",
+      "description": "Input is disabled while processing to prevent duplicate submissions",
+      "status": "pending"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "TC-0.4.1",
+      "name": "Chat page renders successfully",
+      "type": "integration",
+      "preconditions": [
+        "Phoenix application is running",
+        "Router has /chat route configured"
+      ],
+      "steps": [
+        "Navigate to /chat in browser or test client",
+        "Inspect rendered HTML"
+      ],
+      "expected_results": [
+        "Page returns 200 status",
+        "Page contains chat container element",
+        "Page contains message input field",
+        "Page contains send button",
+        "Travel agent branding/title is visible"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.2",
+      "name": "Send message via form submission",
+      "type": "integration",
+      "preconditions": [
+        "Chat LiveView is mounted",
+        "LLM client is available (can be mocked)"
+      ],
+      "steps": [
+        "Type 'Hello, I want to plan a trip' in input field",
+        "Click send button",
+        "Wait for response"
+      ],
+      "expected_results": [
+        "User message appears in chat history",
+        "Input field is cleared after submission",
+        "Loading indicator appears",
+        "Assistant response eventually appears",
+        "Loading indicator disappears"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.3",
+      "name": "Send message via Enter key",
+      "type": "integration",
+      "preconditions": [
+        "Chat LiveView is mounted"
+      ],
+      "steps": [
+        "Type message in input field",
+        "Press Enter key"
+      ],
+      "expected_results": [
+        "Message is submitted same as button click",
+        "Form does not submit if input is empty",
+        "Shift+Enter allows newlines without submitting"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.4",
+      "name": "Message styling differentiation",
+      "type": "integration",
+      "preconditions": [
+        "Chat has both user and assistant messages"
+      ],
+      "steps": [
+        "Send a message and receive response",
+        "Inspect CSS classes on message elements"
+      ],
+      "expected_results": [
+        "User messages have distinct styling (e.g., right-aligned, blue background)",
+        "Assistant messages have distinct styling (e.g., left-aligned, gray background)",
+        "Messages are clearly distinguishable visually"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.5",
+      "name": "Loading state during LLM processing",
+      "type": "integration",
+      "preconditions": [
+        "Chat LiveView is mounted",
+        "LLM response is delayed (mocked)"
+      ],
+      "steps": [
+        "Send a message",
+        "Observe UI before response arrives"
+      ],
+      "expected_results": [
+        "Loading indicator (spinner or dots) is visible",
+        "Input field is disabled",
+        "Send button is disabled",
+        "User cannot send additional messages while loading"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.6",
+      "name": "Auto-scroll to latest message",
+      "type": "integration",
+      "preconditions": [
+        "Chat has enough messages to require scrolling"
+      ],
+      "steps": [
+        "Populate chat with many messages",
+        "Send a new message",
+        "Observe scroll position"
+      ],
+      "expected_results": [
+        "Chat container scrolls to bottom",
+        "Latest message is visible",
+        "Scroll happens smoothly (not jarring)"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.7",
+      "name": "Handle LLM error gracefully",
+      "type": "integration",
+      "preconditions": [
+        "LLM client is configured to return error"
+      ],
+      "steps": [
+        "Mock LLM to return {:error, :rate_limited}",
+        "Send a message",
+        "Observe UI response"
+      ],
+      "expected_results": [
+        "User message is still displayed",
+        "Error message appears in chat or as toast",
+        "Error message is user-friendly (not technical)",
+        "Input is re-enabled for retry",
+        "Application does not crash"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.8",
+      "name": "Empty message prevention",
+      "type": "unit",
+      "preconditions": [
+        "Chat LiveView is mounted"
+      ],
+      "steps": [
+        "Leave input field empty",
+        "Click send button",
+        "Try pressing Enter with empty input"
+      ],
+      "expected_results": [
+        "No message is sent",
+        "No error is displayed",
+        "Input remains focused for typing"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.9",
+      "name": "Conversation persistence within session",
+      "type": "integration",
+      "preconditions": [
+        "Chat LiveView is mounted"
+      ],
+      "steps": [
+        "Send multiple messages in conversation",
+        "Verify all messages remain visible",
+        "Send another message referencing earlier context"
+      ],
+      "expected_results": [
+        "All previous messages remain in view",
+        "Conversation GenServer maintains history",
+        "Assistant responses reflect conversation context"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.10",
+      "name": "LiveView socket connection handling",
+      "type": "integration",
+      "preconditions": [
+        "Chat page is loaded"
+      ],
+      "steps": [
+        "Verify LiveView mounts successfully",
+        "Simulate socket disconnection",
+        "Verify reconnection behavior"
+      ],
+      "expected_results": [
+        "LiveView connects on page load",
+        "Disconnection shows appropriate indicator",
+        "Reconnection restores functionality",
+        "Conversation state is preserved if possible"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.11",
+      "name": "Conversation GenServer integration",
+      "type": "integration",
+      "preconditions": [
+        "Conversation GenServer module available",
+        "LLM client available"
+      ],
+      "steps": [
+        "Mount LiveView",
+        "Verify GenServer is started for session",
+        "Send message and verify history update"
+      ],
+      "expected_results": [
+        "LiveView starts or connects to Conversation GenServer",
+        "Messages are stored in GenServer state",
+        "History is passed to LLM for context"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-0.4.12",
+      "name": "Tool call result integration",
+      "type": "integration",
+      "preconditions": [
+        "Destination tool is available",
+        "LLM makes tool call"
+      ],
+      "steps": [
+        "Ask for destination recommendations",
+        "LLM triggers destination search tool",
+        "Tool results are processed"
+      ],
+      "expected_results": [
+        "Tool execution is transparent to user",
+        "Assistant response includes destination data",
+        "No raw tool call JSON shown to user",
+        "Response is natural language with recommendations"
+      ],
+      "status": "pending"
+    }
+  ],
+  "technical_notes": [
+    "Create TravelAgentWeb.ChatLive LiveView module",
+    "Use Phoenix.PubSub for potential real-time updates",
+    "Store conversation_pid in socket assigns on mount",
+    "Use async Task for LLM calls to avoid blocking LiveView",
+    "Implement handle_info for async response handling",
+    "Use phx-submit for form, phx-disable-with for button loading state",
+    "Consider JS hooks for auto-scroll behavior",
+    "Use Tailwind CSS for styling message bubbles",
+    "Handle tool calls in a loop until LLM returns final response"
+  ],
+  "files_to_create": [
+    "lib/travel_agent_web/live/chat_live.ex",
+    "lib/travel_agent_web/live/chat_live.html.heex",
+    "test/travel_agent_web/live/chat_live_test.exs"
+  ],
+  "dependencies": [
+    "US-0.1",
+    "US-0.2",
+    "US-0.3"
+  ],
+  "estimated_minutes": 30,
+  "blocking": false,
+  "blocks": []
+}
