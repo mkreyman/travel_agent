@@ -90,7 +90,11 @@ defmodule TravelAgentWeb.ChatLive do
         <p class="text-sm text-gray-600">Your friendly travel planning assistant</p>
       </header>
 
-      <div class="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-gray-50 rounded-lg" id="messages">
+      <div
+        class="flex-1 overflow-y-auto space-y-4 mb-4 p-4 bg-gray-50 rounded-lg"
+        id="messages"
+        phx-hook="ScrollToBottom"
+      >
         <%= for message <- @messages do %>
           <div class={[
             "p-3 rounded-lg max-w-[80%]",
