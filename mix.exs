@@ -50,6 +50,9 @@ defmodule TravelAgent.MixProject do
       # HTTP client for LLM APIs
       {:req, "~> 0.5"},
 
+      # Markdown rendering
+      {:earmark, "~> 1.4"},
+
       # Quality tools
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false},

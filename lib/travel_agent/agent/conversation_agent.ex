@@ -168,11 +168,17 @@ defmodule TravelAgent.Agent.ConversationAgent do
         clean_content = strip_surrounding_quotes(content)
         {:ok, clean_content, messages ++ [%{role: "assistant", content: clean_content}]}
 
+      {:ok, %{"content" => content, "tool_calls" => []}} when is_binary(content) ->
+        # Empty tool_calls list with content - treat as final response
+        clean_content = strip_surrounding_quotes(content)
+        {:ok, clean_content, messages ++ [%{role: "assistant", content: clean_content}]}
+
       {:ok, %{"content" => content}} when is_binary(content) and content != "" ->
         clean_content = strip_surrounding_quotes(content)
         {:ok, clean_content, messages ++ [%{role: "assistant", content: clean_content}]}
 
-      {:ok, %{"tool_calls" => tool_calls} = response} when is_list(tool_calls) ->
+      {:ok, %{"tool_calls" => tool_calls} = response}
+      when is_list(tool_calls) and tool_calls != [] ->
         # Add assistant message with tool calls to history
         assistant_message = build_assistant_tool_message(response)
         messages = messages ++ [assistant_message]
@@ -287,19 +293,15 @@ defmodule TravelAgent.Agent.ConversationAgent do
   end
 
   defp strip_surrounding_quotes(nil), do: nil
+  defp strip_surrounding_quotes(""), do: ""
 
   defp strip_surrounding_quotes(content) when is_binary(content) do
-    content
-    |> String.trim()
-    |> strip_quotes()
-  end
+    trimmed = String.trim(content)
 
-  defp strip_quotes(<<"\"", rest::binary>>) do
-    case String.trim_trailing(rest, "\"") do
-      ^rest -> "\"" <> rest
-      trimmed -> trimmed
+    # Use regex to match content wrapped in double quotes
+    case Regex.run(~r/^"(.+)"$/s, trimmed) do
+      [_, inner] -> String.trim(inner)
+      _ -> trimmed
     end
   end
-
-  defp strip_quotes(content), do: content
 end

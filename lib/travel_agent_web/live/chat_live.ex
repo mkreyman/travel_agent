@@ -101,7 +101,7 @@ defmodule TravelAgentWeb.ChatLive do
             message_classes(message.role)
           ]}>
             <p class="text-sm font-medium mb-1">{role_label(message.role)}</p>
-            <p class="whitespace-pre-wrap">{message.content}</p>
+            <div class="prose prose-sm max-w-none">{render_content(message)}</div>
           </div>
         <% end %>
 
@@ -144,4 +144,13 @@ defmodule TravelAgentWeb.ChatLive do
   defp role_label("user"), do: "You"
   defp role_label("assistant"), do: "Travel Agent"
   defp role_label("system"), do: "System"
+
+  defp render_content(%{role: "assistant", content: content}) do
+    case Earmark.as_html(content) do
+      {:ok, html, _} -> Phoenix.HTML.raw(html)
+      {:error, _, _} -> content
+    end
+  end
+
+  defp render_content(%{content: content}), do: content
 end
