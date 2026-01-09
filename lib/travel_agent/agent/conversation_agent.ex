@@ -22,6 +22,8 @@ defmodule TravelAgent.Agent.ConversationAgent do
 
   # Client API
 
+  @type agent :: pid() | atom() | {:via, module(), term()}
+
   @doc """
   Starts a new conversation agent.
 
@@ -29,7 +31,9 @@ defmodule TravelAgent.Agent.ConversationAgent do
   - `:system_prompt` - Custom system prompt (optional)
   - `:tools` - List of tool modules implementing ToolBehaviour (optional)
   - `:name` - GenServer name for registration
+  - `:liveview_pid` - PID of the LiveView process to monitor (optional)
   """
+  @spec start_link(keyword()) :: GenServer.on_start()
   def start_link(opts \\ []) do
     name = Keyword.get(opts, :name)
     GenServer.start_link(__MODULE__, opts, name: name)
@@ -46,6 +50,7 @@ defmodule TravelAgent.Agent.ConversationAgent do
   - `{:ok, response}` on success
   - `{:error, reason}` on failure
   """
+  @spec chat(agent(), String.t()) :: {:ok, String.t()} | {:error, term()}
   def chat(agent, message) do
     GenServer.call(agent, {:chat, message}, 30_000)
   end
@@ -64,6 +69,7 @@ defmodule TravelAgent.Agent.ConversationAgent do
   - `{:ok, response}` on success
   - `{:error, reason}` on failure
   """
+  @spec chat_with_tools(agent(), String.t()) :: {:ok, String.t()} | {:error, term()}
   def chat_with_tools(agent, message) do
     GenServer.call(agent, {:chat_with_tools, message}, 60_000)
   end
@@ -71,6 +77,7 @@ defmodule TravelAgent.Agent.ConversationAgent do
   @doc """
   Get the conversation history.
   """
+  @spec get_history(agent()) :: [SimpleMemory.message()]
   def get_history(agent) do
     GenServer.call(agent, :get_history)
   end
@@ -78,6 +85,7 @@ defmodule TravelAgent.Agent.ConversationAgent do
   @doc """
   Clear the conversation history, keeping only the system prompt.
   """
+  @spec clear_history(agent()) :: :ok
   def clear_history(agent) do
     GenServer.call(agent, :clear_history)
   end
@@ -89,12 +97,23 @@ defmodule TravelAgent.Agent.ConversationAgent do
     system_prompt = Keyword.get(opts, :system_prompt, @default_system_prompt)
     client = Keyword.get(opts, :llm_client, llm_client())
     tools = Keyword.get(opts, :tools, [])
+    liveview_pid = Keyword.get(opts, :liveview_pid)
+
+    # Monitor the LiveView process if provided
+    monitor_ref =
+      if liveview_pid do
+        Process.monitor(liveview_pid)
+      else
+        nil
+      end
 
     state = %{
       memory: SimpleMemory.new(system_prompt),
       llm_client: client,
       tools: tools,
-      tool_map: build_tool_map(tools)
+      tool_map: build_tool_map(tools),
+      liveview_pid: liveview_pid,
+      monitor_ref: monitor_ref
     }
 
     {:ok, state}
@@ -153,6 +172,21 @@ defmodule TravelAgent.Agent.ConversationAgent do
     system_prompt = SimpleMemory.get_system_prompt(state.memory)
     state = put_in(state.memory, SimpleMemory.new(system_prompt))
     {:reply, :ok, state}
+  end
+
+  @impl true
+  def handle_info(
+        {:DOWN, ref, :process, pid, _reason},
+        %{monitor_ref: ref, liveview_pid: pid} = state
+      ) do
+    # LiveView process has terminated, stop the agent
+    Logger.debug("LiveView process #{inspect(pid)} terminated, stopping agent")
+    {:stop, :normal, state}
+  end
+
+  def handle_info({:DOWN, _ref, :process, _pid, _reason}, state) do
+    # Unexpected DOWN message, ignore
+    {:noreply, state}
   end
 
   # Private Functions

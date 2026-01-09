@@ -19,13 +19,16 @@ defmodule TravelAgent.Tools.DestinationToolTest do
       params = DestinationTool.parameters()
       assert params["type"] == "object"
       assert is_map(params["properties"])
-      assert Map.has_key?(params["properties"], "preferences")
+      assert Map.has_key?(params["properties"], "travel_type")
+      assert Map.has_key?(params["properties"], "budget_level")
+      assert Map.has_key?(params["properties"], "region_preference")
+      assert params["required"] == ["travel_type"]
     end
   end
 
   describe "execute/1" do
-    test "returns destinations for beach preferences" do
-      args = %{"preferences" => "beach relaxation warm weather"}
+    test "returns destinations for beach travel type" do
+      args = %{"travel_type" => "beach relaxation"}
 
       assert {:ok, result} = DestinationTool.execute(args)
       assert is_binary(result)
@@ -35,8 +38,8 @@ defmodule TravelAgent.Tools.DestinationToolTest do
       assert String.contains?(result, "Bali") or String.contains?(result, "Maldives")
     end
 
-    test "returns destinations for adventure preferences" do
-      args = %{"preferences" => "adventure hiking mountains"}
+    test "returns destinations for adventure travel type" do
+      args = %{"travel_type" => "adventure hiking mountains"}
 
       assert {:ok, result} = DestinationTool.execute(args)
       assert String.contains?(result, "Found")
@@ -44,8 +47,8 @@ defmodule TravelAgent.Tools.DestinationToolTest do
       assert String.contains?(result, "Swiss Alps") or String.contains?(result, "Machu Picchu")
     end
 
-    test "returns destinations for city preferences" do
-      args = %{"preferences" => "city culture museums history"}
+    test "returns destinations for city travel type" do
+      args = %{"travel_type" => "city culture museums history"}
 
       assert {:ok, result} = DestinationTool.execute(args)
       assert String.contains?(result, "Found")
@@ -53,8 +56,37 @@ defmodule TravelAgent.Tools.DestinationToolTest do
       assert String.contains?(result, "Paris") or String.contains?(result, "Rome")
     end
 
-    test "handles empty preferences gracefully" do
-      args = %{"preferences" => ""}
+    test "filters by budget_level" do
+      args = %{"travel_type" => "beach", "budget_level" => "luxury"}
+
+      assert {:ok, result} = DestinationTool.execute(args)
+      # Should include luxury beach destinations (Maldives)
+      assert String.contains?(result, "Maldives")
+    end
+
+    test "filters by region_preference" do
+      args = %{"travel_type" => "city", "region_preference" => "europe"}
+
+      assert {:ok, result} = DestinationTool.execute(args)
+      # Should include European city destinations
+      assert String.contains?(result, "Paris") or String.contains?(result, "Rome") or
+               String.contains?(result, "Barcelona")
+    end
+
+    test "combines budget_level and region_preference filters" do
+      args = %{
+        "travel_type" => "adventure",
+        "budget_level" => "moderate",
+        "region_preference" => "americas"
+      }
+
+      assert {:ok, result} = DestinationTool.execute(args)
+      # Should include Machu Picchu (moderate, americas, adventure)
+      assert String.contains?(result, "Machu Picchu")
+    end
+
+    test "handles empty travel_type gracefully" do
+      args = %{"travel_type" => ""}
 
       assert {:ok, result} = DestinationTool.execute(args)
       # Should return general recommendations
@@ -62,8 +94,14 @@ defmodule TravelAgent.Tools.DestinationToolTest do
       assert String.contains?(result, "matching destinations")
     end
 
+    test "returns error for missing travel_type" do
+      args = %{"budget_level" => "luxury"}
+
+      assert {:error, :invalid_arguments} = DestinationTool.execute(args)
+    end
+
     test "each destination has required fields in output" do
-      args = %{"preferences" => "beach"}
+      args = %{"travel_type" => "beach"}
 
       assert {:ok, result} = DestinationTool.execute(args)
 
@@ -71,6 +109,8 @@ defmodule TravelAgent.Tools.DestinationToolTest do
       assert String.contains?(result, "Best for:")
       assert String.contains?(result, "Best time to visit:")
       assert String.contains?(result, "Highlights:")
+      assert String.contains?(result, "Region:")
+      assert String.contains?(result, "Budget:")
     end
   end
 

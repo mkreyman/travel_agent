@@ -180,5 +180,55 @@ defmodule TravelAgent.Agent.ConversationAgentTest do
       {:ok, agent} = start_agent(tools: [DestinationTool])
       assert {:ok, _response} = ConversationAgent.chat_with_tools(agent, "Do something")
     end
+
+    test "returns error after max tool iterations exceeded" do
+      # Set up repeated tool calls to exceed the limit
+      expect(MockClient, :chat_with_tools, 5, fn _messages, _tools, _opts ->
+        {:ok,
+         %{
+           "content" => nil,
+           "tool_calls" => [
+             %{
+               "id" => "call_#{System.unique_integer([:positive])}",
+               "type" => "function",
+               "function" => %{
+                 "name" => "search_destinations",
+                 "arguments" => ~s({"travel_type": "beach"})
+               }
+             }
+           ]
+         }}
+      end)
+
+      {:ok, agent} = start_agent(tools: [DestinationTool])
+
+      assert {:error, :max_tool_iterations_exceeded} =
+               ConversationAgent.chat_with_tools(agent, "Keep searching")
+    end
+  end
+
+  describe "context trimming" do
+    test "trims context when exceeding max messages" do
+      # Simulate 25 exchanges (50 messages + system = 51 total)
+      # After trimming, should have system + last 19 messages = 20 total
+      for i <- 1..25 do
+        expect(MockClient, :chat, fn messages, _opts ->
+          # After the first ~20 messages, we should see trimming in action
+          # The total messages should never exceed 21 (system + 20 context)
+          if i > 10 do
+            assert length(messages) <= 21,
+                   "Expected max 21 messages but got #{length(messages)}"
+          end
+
+          {:ok, "Response #{i}"}
+        end)
+      end
+
+      {:ok, agent} = start_agent()
+
+      for i <- 1..25 do
+        {:ok, _} = ConversationAgent.chat(agent, "Message #{i}")
+      end
+    end
   end
 end

@@ -2,7 +2,7 @@ defmodule TravelAgent.Context.SimpleMemory do
   @moduledoc """
   Simple in-memory message storage for conversation context.
 
-  Stores messages as a list of maps with role and content.
+  Stores messages as a list of maps with role, content, and timestamp.
   Suitable for sprint/competition mode where persistence isn't needed.
   """
 
@@ -11,7 +11,7 @@ defmodule TravelAgent.Context.SimpleMemory do
           messages: [message()]
         }
 
-  @type message :: %{role: String.t(), content: String.t()}
+  @type message :: %{role: String.t(), content: String.t(), timestamp: DateTime.t()}
 
   defstruct [:system_prompt, messages: []]
 
@@ -31,7 +31,7 @@ defmodule TravelAgent.Context.SimpleMemory do
   """
   @spec add_message(t(), String.t(), String.t()) :: t()
   def add_message(%__MODULE__{} = memory, role, content) do
-    message = %{role: role, content: content}
+    message = %{role: role, content: content, timestamp: DateTime.utc_now()}
     %{memory | messages: memory.messages ++ [message]}
   end
 
@@ -40,7 +40,12 @@ defmodule TravelAgent.Context.SimpleMemory do
   """
   @spec get_messages(t()) :: [message()]
   def get_messages(%__MODULE__{} = memory) do
-    system_message = %{role: "system", content: memory.system_prompt}
+    system_message = %{
+      role: "system",
+      content: memory.system_prompt,
+      timestamp: DateTime.utc_now()
+    }
+
     [system_message | memory.messages]
   end
 

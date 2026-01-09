@@ -12,6 +12,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Bali",
       country: "Indonesia",
+      region: "asia",
+      budget_level: "moderate",
       description:
         "Tropical paradise with beautiful beaches, ancient temples, and vibrant culture.",
       best_for: ["beach", "relaxation", "culture", "spa", "honeymoon"],
@@ -21,6 +23,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Swiss Alps",
       country: "Switzerland",
+      region: "europe",
+      budget_level: "luxury",
       description: "Stunning mountain landscapes perfect for skiing and hiking adventures.",
       best_for: ["adventure", "hiking", "skiing", "mountains", "nature"],
       best_season: "December to March (skiing), June to September (hiking)",
@@ -29,6 +33,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Paris",
       country: "France",
+      region: "europe",
+      budget_level: "moderate",
       description: "The City of Light offers world-class art, cuisine, and romantic ambiance.",
       best_for: ["city", "culture", "museums", "history", "romance", "food"],
       best_season: "April to June, September to November",
@@ -37,6 +43,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Machu Picchu",
       country: "Peru",
+      region: "americas",
+      budget_level: "moderate",
       description: "Ancient Incan citadel set high in the Andes Mountains.",
       best_for: ["adventure", "history", "hiking", "culture", "photography"],
       best_season: "May to October (dry season)",
@@ -45,6 +53,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Maldives",
       country: "Maldives",
+      region: "asia",
+      budget_level: "luxury",
       description: "Pristine overwater bungalows and crystal-clear waters.",
       best_for: ["beach", "relaxation", "honeymoon", "diving", "luxury"],
       best_season: "November to April (dry season)",
@@ -53,6 +63,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Tokyo",
       country: "Japan",
+      region: "asia",
+      budget_level: "moderate",
       description: "Ultra-modern city blending cutting-edge technology with ancient traditions.",
       best_for: ["city", "culture", "food", "technology", "history"],
       best_season: "March to May (cherry blossoms), October to November",
@@ -61,6 +73,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Costa Rica",
       country: "Costa Rica",
+      region: "americas",
+      budget_level: "budget",
       description: "Biodiversity hotspot with rainforests, volcanoes, and beautiful beaches.",
       best_for: ["adventure", "nature", "wildlife", "eco-tourism", "beach"],
       best_season: "December to April (dry season)",
@@ -69,6 +83,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Rome",
       country: "Italy",
+      region: "europe",
+      budget_level: "moderate",
       description: "Eternal City with ancient ruins, Renaissance art, and incredible food.",
       best_for: ["history", "culture", "museums", "food", "architecture"],
       best_season: "April to June, September to October",
@@ -77,6 +93,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "New Zealand",
       country: "New Zealand",
+      region: "oceania",
+      budget_level: "moderate",
       description: "Dramatic landscapes from fjords to volcanoes, perfect for adventure.",
       best_for: ["adventure", "nature", "hiking", "scenery", "film locations"],
       best_season: "December to February (summer)",
@@ -85,6 +103,8 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       name: "Barcelona",
       country: "Spain",
+      region: "europe",
+      budget_level: "moderate",
       description: "Vibrant coastal city with unique architecture and lively nightlife.",
       best_for: ["city", "beach", "culture", "architecture", "nightlife", "food"],
       best_season: "May to June, September to October",
@@ -106,23 +126,37 @@ defmodule TravelAgent.Tools.DestinationTool do
     %{
       "type" => "object",
       "properties" => %{
-        "preferences" => %{
+        "travel_type" => %{
           "type" => "string",
           "description" =>
-            "User's travel preferences and interests (e.g., 'beach relaxation', 'adventure hiking', 'city culture museums')"
+            "Type of travel experience (e.g., 'beach', 'adventure', 'city', 'culture', 'relaxation', 'hiking', 'food')"
+        },
+        "budget_level" => %{
+          "type" => "string",
+          "enum" => ["budget", "moderate", "luxury"],
+          "description" => "Budget level for the trip"
+        },
+        "region_preference" => %{
+          "type" => "string",
+          "enum" => ["asia", "europe", "americas", "oceania", "africa"],
+          "description" => "Preferred geographic region"
         }
       },
-      "required" => ["preferences"]
+      "required" => ["travel_type"]
     }
   end
 
   @impl true
-  def execute(%{"preferences" => preferences}) do
-    preferences_lower = String.downcase(preferences)
-    keywords = extract_keywords(preferences_lower)
+  def execute(%{"travel_type" => travel_type} = args) do
+    budget_level = Map.get(args, "budget_level")
+    region_preference = Map.get(args, "region_preference")
+
+    keywords = extract_keywords(String.downcase(travel_type))
 
     matching_destinations =
       @destinations
+      |> filter_by_budget(budget_level)
+      |> filter_by_region(region_preference)
       |> Enum.map(fn dest ->
         score = calculate_match_score(dest, keywords)
         {dest, score}
@@ -135,7 +169,14 @@ defmodule TravelAgent.Tools.DestinationTool do
     # If no matches, return top general recommendations
     results =
       if matching_destinations == [] do
-        Enum.take(@destinations, 3)
+        @destinations
+        |> filter_by_budget(budget_level)
+        |> filter_by_region(region_preference)
+        |> Enum.take(3)
+        |> case do
+          [] -> Enum.take(@destinations, 3)
+          filtered -> filtered
+        end
       else
         matching_destinations
       end
@@ -148,6 +189,18 @@ defmodule TravelAgent.Tools.DestinationTool do
   end
 
   # Private functions
+
+  defp filter_by_budget(destinations, nil), do: destinations
+
+  defp filter_by_budget(destinations, budget_level) do
+    Enum.filter(destinations, &(&1.budget_level == budget_level))
+  end
+
+  defp filter_by_region(destinations, nil), do: destinations
+
+  defp filter_by_region(destinations, region) do
+    Enum.filter(destinations, &(&1.region == region))
+  end
 
   defp extract_keywords(text) do
     text
@@ -175,10 +228,13 @@ defmodule TravelAgent.Tools.DestinationTool do
       |> Enum.with_index(1)
       |> Enum.map(fn {dest, index} ->
         highlights = Enum.join(dest.highlights, ", ")
+        budget = String.capitalize(dest.budget_level)
+        region = String.capitalize(dest.region)
 
         """
         #{index}. #{dest.name}, #{dest.country}
            #{dest.description}
+           Region: #{region} | Budget: #{budget}
            Best for: #{Enum.join(dest.best_for, ", ")}
            Best time to visit: #{dest.best_season}
            Highlights: #{highlights}

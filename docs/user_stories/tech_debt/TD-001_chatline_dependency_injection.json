@@ -1,0 +1,134 @@
+{
+  "id": "TD-001",
+  "title": "ChatLive Dependency Injection for Testability",
+  "type": "tech_debt",
+  "priority": "medium",
+  "phase": "post-mvp",
+  "story": {
+    "as_a": "developer",
+    "i_want_to": "inject the LLM client dependency through the LiveView to the ConversationAgent",
+    "so_that": "I can properly test ChatLive message flows without global state or cross-process mock coordination"
+  },
+  "problem_description": {
+    "summary": "ChatLive cannot be properly tested for message interactions due to cross-process mock limitations",
+    "current_state": [
+      "ChatLive spawns ConversationAgent via DynamicSupervisor in mount/3",
+      "ConversationAgent gets LLM client from Application.get_env at startup",
+      "Test process sets Mox expectations, but agent runs in separate process",
+      "Mox expectations are per-process and cannot cross process boundaries without global state"
+    ],
+    "impact": [
+      "ChatLive coverage is only 40.63% (only static HTML can be tested)",
+      "Message flow, error handling, and clear history cannot be unit tested",
+      "Integration tests would require actual LLM calls or global mock state"
+    ],
+    "root_cause": "Lack of dependency injection - LLM client is resolved at agent startup, not passed from caller"
+  },
+  "proposed_solution": {
+    "approach": "Inject LLM client through the LiveView to ConversationAgent",
+    "changes": [
+      {
+        "file": "lib/travel_agent_web/live/chat_live.ex",
+        "description": "Accept :llm_client assign or use default from config, pass to agent"
+      },
+      {
+        "file": "lib/travel_agent/agent/conversation_agent.ex",
+        "description": "Require :llm_client in opts instead of reading from Application.get_env"
+      },
+      {
+        "file": "test/travel_agent_web/live/chat_live_test.exs",
+        "description": "Create LiveView with injected mock client, test full message flows"
+      }
+    ],
+    "pattern": "Constructor injection - dependencies passed at creation time"
+  },
+  "acceptance_criteria": [
+    {
+      "id": "AC-TD-001.1",
+      "description": "ChatLive accepts optional :llm_client assign for testing",
+      "status": "pending"
+    },
+    {
+      "id": "AC-TD-001.2",
+      "description": "ConversationAgent receives LLM client as required option",
+      "status": "pending"
+    },
+    {
+      "id": "AC-TD-001.3",
+      "description": "ChatLive tests can verify message flow without global state",
+      "status": "pending"
+    },
+    {
+      "id": "AC-TD-001.4",
+      "description": "ChatLive test coverage exceeds 80%",
+      "status": "pending"
+    }
+  ],
+  "test_cases": [
+    {
+      "id": "TC-TD-001.1",
+      "name": "Send message and receive response",
+      "type": "integration",
+      "steps": [
+        "Mount ChatLive with injected mock LLM client",
+        "Submit message via send_message event",
+        "Verify user message appears in UI",
+        "Verify assistant response appears after mock returns"
+      ],
+      "expected_results": [
+        "Both messages rendered in chat",
+        "Loading indicator shown during processing",
+        "No global state required"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-TD-001.2",
+      "name": "Handle LLM error gracefully",
+      "type": "integration",
+      "steps": [
+        "Mount ChatLive with mock that returns {:error, :timeout}",
+        "Submit message",
+        "Verify error message displayed"
+      ],
+      "expected_results": [
+        "Error message shown to user",
+        "Chat remains functional"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "TC-TD-001.3",
+      "name": "Clear chat history",
+      "type": "integration",
+      "steps": [
+        "Mount ChatLive with mock",
+        "Send messages to populate history",
+        "Click clear_history button",
+        "Verify chat is cleared"
+      ],
+      "expected_results": [
+        "Messages container is empty",
+        "Empty state with suggestions shown"
+      ],
+      "status": "pending"
+    }
+  ],
+  "technical_notes": [
+    "Use Phoenix.LiveViewTest.live/2 with session containing :llm_client",
+    "Consider using a factory module that wraps DynamicSupervisor.start_child",
+    "Alternative: Use a client factory/builder that can be injected",
+    "This follows the OTP principle: dependencies should be explicit, not implicit"
+  ],
+  "files_to_modify": [
+    "lib/travel_agent_web/live/chat_live.ex",
+    "lib/travel_agent/agent/conversation_agent.ex",
+    "test/travel_agent_web/live/chat_live_test.exs"
+  ],
+  "dependencies": [],
+  "estimated_minutes": 45,
+  "blocking": false,
+  "blocks": [],
+  "created_at": "2026-01-09",
+  "discovered_during": "Team review - test coverage improvement task"
+}

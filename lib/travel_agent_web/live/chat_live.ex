@@ -10,42 +10,65 @@ defmodule TravelAgentWeb.ChatLive do
   alias TravelAgent.Agent.ConversationAgent
   alias TravelAgent.Tools.DestinationTool
 
+  @max_message_length 4000
+
   @impl true
   def mount(_params, _session, socket) do
-    # Start a new conversation agent for this session with travel configuration
-    system_prompt = Application.get_env(:travel_agent, :travel_system_prompt)
-
-    {:ok, agent} =
-      ConversationAgent.start_link(
-        system_prompt: system_prompt,
-        tools: [DestinationTool]
-      )
-
     socket =
       socket
-      |> assign(:agent, agent)
+      |> assign(:agent, nil)
       |> assign(:messages, [])
       |> assign(:input_value, "")
       |> assign(:loading, false)
+      |> assign(:error, nil)
+
+    # Only start agent when connected (mount is called twice: HTTP render + WebSocket)
+    socket =
+      if connected?(socket) do
+        system_prompt = Application.get_env(:travel_agent, :travel_system_prompt)
+
+        {:ok, agent} =
+          DynamicSupervisor.start_child(
+            TravelAgent.AgentSupervisor,
+            {ConversationAgent,
+             system_prompt: system_prompt, tools: [DestinationTool], liveview_pid: self()}
+          )
+
+        assign(socket, :agent, agent)
+      else
+        socket
+      end
 
     {:ok, socket}
   end
 
   @impl true
-  def handle_event("send_message", %{"message" => message}, socket) when message != "" do
-    # Add user message to UI
-    user_message = %{role: "user", content: message}
+  def handle_event("send_message", %{"message" => message}, socket)
+      when message != "" and byte_size(message) <= @max_message_length do
+    # Don't process if agent isn't ready yet
+    if is_nil(socket.assigns.agent) do
+      {:noreply, assign(socket, :error, "Please wait for the chat to initialize...")}
+    else
+      # Add user message to UI
+      user_message = %{role: "user", content: message}
 
-    socket =
-      socket
-      |> update(:messages, &(&1 ++ [user_message]))
-      |> assign(:input_value, "")
-      |> assign(:loading, true)
+      socket =
+        socket
+        |> update(:messages, &(&1 ++ [user_message]))
+        |> assign(:input_value, "")
+        |> assign(:loading, true)
+        |> assign(:error, nil)
 
-    # Send to agent asynchronously
-    send(self(), {:chat, message})
+      # Send to agent asynchronously
+      send(self(), {:chat, message})
 
-    {:noreply, socket}
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("send_message", %{"message" => message}, socket)
+      when byte_size(message) > @max_message_length do
+    {:noreply, assign(socket, :error, "Message too long (max #{@max_message_length} characters)")}
   end
 
   def handle_event("send_message", _params, socket) do
@@ -57,7 +80,10 @@ defmodule TravelAgentWeb.ChatLive do
   end
 
   def handle_event("clear_history", _params, socket) do
-    ConversationAgent.clear_history(socket.assigns.agent)
+    if socket.assigns.agent do
+      ConversationAgent.clear_history(socket.assigns.agent)
+    end
+
     {:noreply, assign(socket, :messages, [])}
   end
 
@@ -235,6 +261,9 @@ defmodule TravelAgentWeb.ChatLive do
 
         <%!-- Input Area --%>
         <div class="bg-slate-800/30 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-2">
+          <%= if @error do %>
+            <p class="text-sm text-red-400 mb-2 px-2">{@error}</p>
+          <% end %>
           <form phx-submit="send_message" class="flex items-center gap-2">
             <input
               type="text"
