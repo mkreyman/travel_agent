@@ -1,71 +1,116 @@
-# Competition Starter Template
+# Travel Agent
 
-Pre-configured Phoenix project for 2-hour competition sprints.
+AI-powered travel planning assistant built with Phoenix LiveView and OpenAI GPT-4o.
+
+**Live Demo:** https://travel-agent-ai.fly.dev
+
+## Overview
+
+This project demonstrates building conversational AI agents using Phoenix LiveView with:
+
+- **GenServer-per-conversation** architecture for isolated agent state
+- **Tool use pattern** for extensible agent capabilities (OpenAI function calling)
+- **Behaviour-based LLM client** for easy testing with Mox
+- **Real-time chat UI** with markdown rendering
+
+## Features
+
+- Interactive chat interface with Phoenix LiveView
+- OpenAI GPT-4o integration for natural language understanding
+- Tool/function calling for destination recommendations
+- Markdown rendering for formatted responses
+- Real-time "thinking" indicators during AI processing
 
 ## Quick Start
 
 ```bash
-# 1. Copy to workspace with your project name
-cp -r ~/workspace/.claude/skills/ai-agent-builder/competition-starter ~/workspace/<your_project>
+# Clone the repository
+git clone https://github.com/mkreyman/travel_agent.git
+cd travel_agent
 
-# 2. Run setup script (renames modules, updates configs)
-cd ~/workspace/<your_project>
-./setup.sh <YourProjectName>
+# Install dependencies
+mix deps.get
 
-# 3. Verify PLT (should be instant if pre-built)
-mix dialyzer
+# Set your OpenAI API key
+export OPENAI_API_KEY=sk-your-key-here
 
-# 4. Start development
+# Start the server
 mix phx.server
 ```
 
-## Pre-Built Components
+Visit http://localhost:4000 to start chatting with the travel agent.
 
-- **Quality Gates**: `mix precommit` alias configured
-- **Pre-commit Hook**: Ready to install
-- **LLM Client Behaviour**: Mox-ready pattern
-- **GenServer Agent**: Conversation agent template
-- **LiveView Chat**: Basic chat interface
-- **Test Setup**: Mocks and fixtures ready
+## Development
 
-## Directory Structure
+### Prerequisites
 
-```
-lib/template_app/
-├── agent/
-│   └── conversation_agent.ex    # GenServer with in-memory state
-├── llm/
-│   ├── client_behaviour.ex      # Behaviour for LLM swapping/mocking
-│   └── openai_client.ex         # Default OpenAI implementation
-└── context/
-    └── simple_memory.ex         # In-memory message list
+- Elixir 1.18.4+
+- Erlang/OTP 27.2.4+
+- OpenAI API key
 
-lib/template_app_web/
-└── live/
-    └── chat_live.ex             # Single LiveView for chat UI
-
-test/
-├── support/
-│   ├── mocks.ex                 # Mox definitions
-│   └── fixtures.ex              # Test helpers
-└── agent/
-    └── conversation_agent_test.exs
-```
-
-## After Setup
-
-1. Add your OpenAI API key to config/runtime.exs
-2. Update the system prompt in `conversation_agent.ex`
-3. Implement competition-specific features
-4. Run `mix precommit` before every commit
-
-## PLT Status
-
-To build PLT (takes 3-5 minutes, do this BEFORE competition):
+### Running Tests
 
 ```bash
-mix deps.get
-mix dialyzer --plt
+mix test
 ```
 
-The PLT will be cached for instant dialyzer runs during competition.
+### Code Quality
+
+```bash
+# Format code
+mix format
+
+# Run static analysis
+mix credo --strict
+
+# Run all quality checks
+mix format --check-formatted && mix compile --warnings-as-errors && mix credo --strict && mix test
+```
+
+## Architecture
+
+See [docs/architecture.md](docs/architecture.md) for detailed architecture documentation.
+
+### Key Components
+
+- **ConversationAgent** - GenServer managing conversation state and LLM interactions
+- **OpenAIClient** - HTTP client for OpenAI Chat Completions API
+- **ToolBehaviour** - Extensible pattern for adding agent capabilities
+- **ChatLive** - Phoenix LiveView for real-time chat interface
+
+## Deployment
+
+The application is deployed to Fly.io with automatic CI/CD:
+
+- **Push to main/master** triggers tests, then deploys on success
+- **Pull requests** run tests only (no deployment)
+
+### Manual Deployment
+
+```bash
+fly deploy
+```
+
+### Required Secrets
+
+```bash
+fly secrets set OPENAI_API_KEY=sk-your-key-here
+fly secrets set SECRET_KEY_BASE=$(mix phx.gen.secret)
+```
+
+## CI/CD Pipeline
+
+GitHub Actions workflow (`.github/workflows/ci.yml`):
+
+1. **Test Job** - Runs on all pushes and PRs
+   - Format check (`mix format --check-formatted`)
+   - Compilation with warnings as errors
+   - Credo static analysis
+   - Test suite
+
+2. **Deploy Job** - Runs after successful tests on main/master
+   - Deploys to Fly.io using Docker build
+
+## License
+
+MIT
